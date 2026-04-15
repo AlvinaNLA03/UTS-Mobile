@@ -36,6 +36,7 @@ class GameViewModel : ViewModel() {
     // Game UI state
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
+    private val wordManager = WordManager(application)
 
     var userGuess by mutableStateOf("")
         private set
@@ -138,5 +139,6 @@ class GameViewModel : ViewModel() {
             usedWords.add(currentWord)
             shuffleCurrentWord(currentWord)
         }
+        val allWords = wordManager.getWords()
     }
 }
