@@ -32,17 +32,23 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,10 +64,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unscramble.R
 import com.example.unscramble.ui.theme.UnscrambleTheme
 
+
 @Composable
 fun GameScreen(gameViewModel: GameViewModel = viewModel()) {
     val gameUiState by gameViewModel.uiState.collectAsState()
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
+    var showAddWordDialog by remember { mutableStateOf(false) }
+    val gameViewModel: GameViewModel = viewModel(factory = AppViewModelProvider.Factory)
 
     Column(
         modifier = Modifier
@@ -116,9 +125,26 @@ fun GameScreen(gameViewModel: GameViewModel = viewModel()) {
                     fontSize = 16.sp
                 )
             }
+            TextButton(
+                onClick = { showAddWordDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Tambah Kata Baru", fontSize = 14.sp)
+            }
         }
 
         GameStatus(score = gameUiState.score, modifier = Modifier.padding(20.dp))
+        if (showAddWordDialog) {
+            AddWordDialog(
+                onDismiss = { showAddWordDialog = false },
+                onSave = {
+                    gameViewModel.addNewWord()
+                    showAddWordDialog = false
+                },
+                newWord = gameViewModel.userAddedWord,
+                onWordChange = { gameViewModel.updateNewWord(it) }
+            )
+        }
 
         if (gameUiState.isGameOver) {
             FinalScoreDialog(
@@ -256,4 +282,39 @@ fun GameScreenPreview() {
     UnscrambleTheme {
         GameScreen()
     }
+}
+
+@Composable
+fun AddWordDialog(
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+    newWord: String,
+    onWordChange: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Simpan Kata Baru") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Masukkan kata yang ingin ditambahkan ke permainan.")
+                OutlinedTextField(
+                    value = newWord,
+                    onValueChange = onWordChange,
+                    label = { Text("Ketik di sini") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSave, enabled = newWord.isNotBlank()) {
+                Text("Simpan")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Batal")
+            }
+        }
+    )
 }
